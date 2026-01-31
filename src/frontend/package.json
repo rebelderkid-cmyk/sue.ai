@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build", "vercel-build": "echo CurrentDir: "vercel-build": "next build","vercel-build": "next build", pwd "vercel-build": "next build","vercel-build": "next build", ls -R src "vercel-build": "next build","vercel-build": "next build", next build",
+    "build": "next build",
+    "vercel-build": "next build",
     "start": "next start",
     "lint": "eslint"
   },

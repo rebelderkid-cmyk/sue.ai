@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set timeout 20
+spawn ssh root@188.212.158.214
+expect {
+  "yes/no" { send "yes\r"; exp_continue }
+  "password:" { send "KUMA-STUDIO@N-#\$1968.NcsLcMvd\r" }
+}
+expect "#"
+send "echo '---FILES---'\r"
+send "find . -name '*.pdf' | wc -l\r"
+send "echo '---RCLONE_SPEED---'\r"
+send "tail -n 10 rclone.log | grep 'Transferred:'\r"
+send "echo '---END---'\r"
+send "exit\r"
+expect eof

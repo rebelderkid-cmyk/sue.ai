@@ -1,0 +1,40 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/sue-ai/backend-go:$BUILD_ID'
+      - '-t'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/sue-ai/backend-go:latest'
+      - '.'
+
+  # 2. Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/sue-ai/backend-go:$BUILD_ID'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-southeast1-docker.pkg.dev/$PROJECT_ID/sue-ai/backend-go:latest'
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'sue-ai-backend-go'
+      - '--image=asia-southeast1-docker.pkg.dev/$PROJECT_ID/sue-ai/backend-go:$BUILD_ID'
+      - '--region=asia-southeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--timeout=300s'
+      - '--set-env-vars=PROJECT_ID=$PROJECT_ID,DATA_STORE_ID_DEKA=sue-ai-search_1768730959752,DATA_STORE_ID_LAW=main-legal-search_1768906502953'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

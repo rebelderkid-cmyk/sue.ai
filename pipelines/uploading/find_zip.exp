@@ -1,0 +1,8 @@
+#!/usr/bin/expect -f
+set timeout 20
+spawn ssh root@188.212.158.214 "find /root -name '*.zip' -maxdepth 2"
+expect {
+  "yes/no" { send "yes\r"; exp_continue }
+  "password:" { send "KUMA-STUDIO@N-#\$1968.NcsLcMvd\r" }
+}
+expect eof

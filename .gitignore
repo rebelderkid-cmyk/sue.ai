@@ -1,0 +1,55 @@
+# === SYSTEM & LOGS ===
+.DS_Store
+Thumbs.db
+*.log
+logs/
+*.pem
+
+# === DEPENDENCIES (Recursive) ===
+node_modules/
+**/node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# === NEXT.JS & FRONTEND ===
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# === DATA FILES (STRICTLY IGNORE) ===
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tgz
+*.pdf
+*.jsonl
+*.json
+*.csv
+*.xlsx
+*.db
+*.sqlite
+
+# === EXCEPTIONS (Keep Configs) ===
+!package.json
+!tsconfig.json
+!jsconfig.json
+!.eslintrc.json
+!src/frontend/package.json
+!src/frontend/tsconfig.json
+!src/frontend/next.config.ts
+
+# === LARGE DIRECTORIES ===
+archive/
+data/
+outputs/
+temp/
+tmp/
+categorized_final_v1/
+sue_ai_source_code.zip

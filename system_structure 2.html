@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Legal Board | System Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Sarabun:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f59e0b;
+            /* Amber 500 */
+            --bg: #020617;
+            /* Slate 950 */
+            --card: #0f172a;
+            /* Slate 900 */
+            --text: #f8fafc;
+            /* Slate 50 */
+            --accent: #fbbf24;
+            /* Amber 400 */
+            --success: #10b981;
+            --muted: #64748b;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1e1b4b 0%, var(--bg) 70%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-weight: 300;
+            opacity: 0.8;
+            font-size: 1.1rem;
+            color: var(--muted);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(245, 158, 11, 0.1);
+            margin-bottom: 40px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 40px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(245, 158, 11, 0.05);
+            padding: 30px;
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            background: rgba(245, 158, 11, 0.05);
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .tag {
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 15px;
+            display: inline-block;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px;
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: 0.05em;
+        }
+
+        /* Mermaid Overrides for Dark Mode */
+        .node rect {
+            fill: #1e293b !important;
+            stroke: #475569 !important;
+        }
+
+        .node .label {
+            color: #f8fafc !important;
+        }
+
+        .edgePath path {
+            stroke: #fbbf24 !important;
+        }
+
+        .edgeLabel {
+            background-color: #0f172a !important;
+            color: #fbbf24 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="tag" style="margin-bottom: 20px;">v6.0 Hybrid Architecture</div>
+            <h1>The Legal Board Structure</h1>
+            <p class="subtitle">สถาปัตยกรรมระบบค้นคว้ากฎหมายเชิงลึก (The Legal Intelligence Matrix) - Enhanced RAG &
+                Grounding</p>
+        </header>
+
+        <div class="card">
+            <div class="mermaid">
+                graph TB
+                subgraph "Frontend Layer"
+                User((👨‍⚖️ Legal Prof))
+                TheBoard["🏛️ The Legal Board (Next.js)"]
+                AdaptiveUI["📱 Responsive Slate UI"]
+                end
+
+                subgraph "Cloud Backend (Go/Gin :8080)"
+                API["🚀 Go Gin API"]
+                Router["🧠 Intent Analyzer (Gemini 2.0)"]
+                Memory["🧠 Context Memory"]
+                FallbackAgent["🌐 Internet Grounding Agent"]
+                end
+
+                subgraph "Vertex AI Intelligence"
+                DekaEngine["📚 DEKA Engine (Legacy Active)"]
+                LawEngine["⚖️ Unified Law Engine v3 (Indexing)"]
+
+                subgraph "Data Stores"
+                DekaStore["🗄️ Deka Store (Old)"]
+                LawStoresV2["🗄️ Law Stores v2 (Clean/Struct)"]
+                end
+
+                GeminiFlash["✨ Gemini 2.0 Flash"]
+                end
+
+                subgraph "Data Pipeline v7"
+                WorkerVM["🚀 Data Processing VM"]
+                ScriptV7["🐍 categorize_script_v7 (Date Norm)"]
+                GCSConfig["⚙️ Schema v7"]
+                GCS[("📦 gs://.../categorized_v7")]
+                end
+
+                %% Flows
+                User --> TheBoard
+                TheBoard --> API
+                API --> Router
+
+                %% Routing Logic
+                Router -- "Deka/Rulings" --> DekaEngine
+                DekaEngine --> DekaStore
+
+                Router -. "Law/Statutes (Indexing)" .-> LawEngine
+                LawEngine -.-> LawStoresV2
+
+                Router -- "Law Queries (Current)" --> FallbackAgent
+                FallbackAgent -- "Google Search" --> GeminiFlash
+
+                %% Pipeline Flows
+                WorkerVM --> ScriptV7
+                ScriptV7 -- "Fix Date/Schema" --> GCS
+                GCS --> LawStoresV2
+                GCSConfig --> ScriptV7
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="feature-card">
+                <span class="tag">Hybrid Intelligence</span>
+                <h3>🔍 Intent-Based Routing</h3>
+                <p>ระบบแยกแยะเจตนา (Intent) : ค้นหาฎีกาผ่าน Database (RAG) หรือ ค้นหากฎหมายปัจจุบันผ่าน Internet
+                    Grounding (Prompt) เพื่อความแม่นยำสูงสุด</p>
+            </div>
+            <div class="feature-card">
+                <span class="tag">Data Pipeline v7</span>
+                <h3>🏎️ Clean & Normalized Data</h3>
+                <p>Script v7 ใหม่ เพิ่มระบบแปลงวันที่ไทย (พ.ศ.) เป็นมาตรฐาน ISO 8601 และจัดโครงสร้าง Schema ให้รองรับ
+                    Vertex AI 100%</p>
+            </div>
+            <div class="feature-card">
+                <span class="tag">Infrastructure</span>
+                <h3>🛡️ Resilient Architecture</h3>
+                <p>แยก Engine ฎีกา (Legacy) และ กฎหมาย (Unified v3) ออกจากกัน เพื่อลดความเสี่ยง หากฝั่งหนึ่ง Indexing
+                    อยู่ อีกฝั่งยังทำงานได้</p>
+            </div>
+            <div class="feature-card">
+                <span class="tag">Performance</span>
+                <h3>🚀 Go Gin Runtime</h3>
+                <p>Backend Go ประสิทธิภาพสูง Native Concurrency พร้อมรองรับ Gemini 2.0 Flash Model ล่าสุด</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 60px; border-color: rgba(16, 185, 129, 0.2);">
+            <div class="tag" style="background: var(--success);">Future Roadmap & Vision</div>
+            <div class="grid" style="margin-top: 20px;">
+                <div style="padding: 10px;">
+                    <h3 style="color: var(--success); display: flex; items-center; gap: 10px;">🧬 Multi-Store
+                        Intelligence</h3>
+                    <p>การแยกถังข้อมูลเป็น Specialized Engines (Civil, Criminal, Labor, Bankruptcy) แบบเบ็ดเสร็จ
+                        เพื่อความแม่นยำระดับ 99.9% ไร้เสียงรบกวนจากประกาศทั่วไป</p>
+                </div>
+                <div style="padding: 10px;">
+                    <h3 style="color: var(--success); display: flex; items-center; gap: 10px;">🧠 Long-term Persistent
+                        Memory</h3>
+                    <p>พัฒนาระบบความจำระยะยาวผ่าน Vector Database เพื่อให้ AI จำสไตล์การทำงาน สรุปรูปคดีเก่า
+                        และประวัติการวิเคราะห์ของพี่รินทร์ได้ข้ามโครงการ</p>
+                </div>
+                <div style="padding: 10px;">
+                    <h3 style="color: var(--success); display: flex; items-center; gap: 10px;">🤖 Agentic Legal
+                        Workflows</h3>
+                    <p>ก้าวข้ามจากการค้นหา (Search) สู่การทำงาน (Agent) เช่น การร่างคำฟ้องอัตโนมัติ การทำ Due Diligence
+                        ตรวจสอบสัญญาแบบละเอียด และการทำนายผลคำพิพากษา (Outcome Prediction)</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            PROTOTYPED BY ANTIGRAVITY FOR THE LEGAL BOARD PROJECT © 2026
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#f59e0b',
+                primaryTextColor: '#f8fafc',
+                primaryBorderColor: '#fbbf24',
+                lineColor: '#fbbf24',
+                secondaryColor: '#0f172a',
+                tertiaryColor: '#1e293b'
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+// Vercel Deployment Config
 const nextConfig: NextConfig = {
   output: "standalone",
   env: {

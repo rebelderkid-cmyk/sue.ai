@@ -33,7 +33,13 @@ interface ChatState {
     sessions: Record<string, ChatSession>;
     activeSessionId: string | null;
 
+    // UI State
+    isMobileOpen: boolean;
+    isDesktopOpen: boolean;
+
     // Actions
+    setMobileOpen: (open: boolean) => void;
+    toggleDesktop: () => void;
     createSession: () => string;
     setActiveSession: (id: string | null) => void;
     addMessage: (sessionId: string, message: Omit<Message, 'id' | 'createdAt'>) => void;
@@ -47,6 +53,13 @@ export const useChatStore = create<ChatState>()(
         (set, get) => ({
             sessions: {},
             activeSessionId: null,
+            
+            // UI State Defaults
+            isMobileOpen: false,
+            isDesktopOpen: true,
+
+            setMobileOpen: (open) => set({ isMobileOpen: open }),
+            toggleDesktop: () => set((state) => ({ isDesktopOpen: !state.isDesktopOpen })),
 
             createSession: () => {
                 const id = crypto.randomUUID();

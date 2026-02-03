@@ -1,0 +1,9 @@
+# Secrets
+.env
+service-account.json
+*.json
+
+# Build
+/bin/
+/dist/
+main

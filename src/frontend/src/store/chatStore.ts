@@ -72,8 +72,21 @@ export const useChatStore = create<ChatState>()(
                     const session = state.sessions[sessionId];
                     if (!session) return state;
 
+                    // OPTIMIZATION: Reduce payload size for LocalStorage efficiency
+                    // 1. If sources exist, strip heavy 'content' fields
+                    let optimizedSources = msg.sources;
+                    if (optimizedSources && optimizedSources.length > 0) {
+                        optimizedSources = optimizedSources.map(s => ({
+                            ...s,
+                            content: undefined, // Don't save full content text
+                            snippet: s.snippet ? s.snippet.slice(0, 200) + '...' : undefined, // Truncate snippet
+                            text: s.text ? s.text.slice(0, 100) + '...' : '' // Truncate raw text match
+                        }));
+                    }
+
                     const newMessage: Message = {
                         ...msg,
+                        sources: optimizedSources,
                         id: crypto.randomUUID(),
                         createdAt: Date.now(),
                     };
@@ -126,8 +139,60 @@ export const useChatStore = create<ChatState>()(
             clearHistory: () => set({ sessions: {}, activeSessionId: null }),
         }),
         {
-            name: 'sue-ai-chat-history', // key in local storage
-            storage: createJSONStorage(() => localStorage),
+            name: 'sue-ai-chat-history',
+            storage: createJSONStorage(() => {
+                // Custom Safe Storage Wrapper with Auto-Cleanup
+                return {
+                    getItem: (name) => {
+                        const str = localStorage.getItem(name);
+                        return str ? JSON.parse(str) : null;
+                    },
+                    setItem: (name, value) => {
+                        try {
+                            localStorage.setItem(name, JSON.stringify(value));
+                        } catch (e) {
+                            if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                                console.warn('⚠️ LocalStorage Full! Attempting Auto-Cleanup...');
+
+                                // Clean up Logic:
+                                // 1. Try to parse current value state to identify old sessions
+                                try {
+                                    const state = value as any;
+                                    if (state && state.state && state.state.sessions) {
+                                        const sessions = state.state.sessions;
+                                        const sortedIds = Object.keys(sessions).sort((a, b) =>
+                                            sessions[a].updatedAt - sessions[b].updatedAt
+                                        );
+
+                                        // Delete oldest 20% of sessions
+                                        const deleteCount = Math.max(1, Math.floor(sortedIds.length * 0.2));
+
+                                        console.log(`🧹 Deleting ${deleteCount} old sessions to free up space.`);
+                                        for (let i = 0; i < deleteCount; i++) {
+                                            delete sessions[sortedIds[i]];
+                                        }
+
+                                        // Retry saving
+                                        try {
+                                            localStorage.setItem(name, JSON.stringify(state));
+                                            console.log('✅ Auto-Cleanup Successful. Data saved.');
+                                        } catch (retryErr) {
+                                            console.error('❌ Auto-Cleanup failed to free enough space.', retryErr);
+                                            // Last Resort: Clear everything if critical (or handle gracefully)
+                                            // For now, prevent crash by doing nothing (data loss warning)
+                                        }
+                                    }
+                                } catch (cleanupErr) {
+                                    console.error('Failed to perform cleanup logic', cleanupErr);
+                                }
+                            } else {
+                                console.error('LocalStorage Save Error:', e);
+                            }
+                        }
+                    },
+                    removeItem: (name) => localStorage.removeItem(name),
+                };
+            }),
         }
     )
 );

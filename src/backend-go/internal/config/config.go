@@ -15,15 +15,17 @@ type Config struct {
 	EngineIDDeka    string
 	EngineIDLaw     string
 	GeminiAPIKey    string
+	CredentialsFile string
 }
 
 // LoadConfig reads configuration from environment variables or .env file
 func LoadConfig() *Config {
 	// Attempt to load .env file from common locations based on execution root
-	_ = godotenv.Load()                         // ./.env
-	_ = godotenv.Load("src/backend/.env")       // from Project Root
-	_ = godotenv.Load("../backend/.env")        // from src/backend-go/
-	_ = godotenv.Load("../../src/backend/.env") // from deep subdirs
+	_ = godotenv.Load()                      // ./.env
+	_ = godotenv.Load("../../.env")          // from cmd/server/ (Standard Go layout)
+	_ = godotenv.Load("../.env")             // from cmd/
+	_ = godotenv.Load("src/backend-go/.env") // from Project Root
+	_ = godotenv.Load(".env")                // from src/backend-go/
 
 	key := getEnv("GEMINI_API_KEY", "")
 	// Sanitize: strip double quotes if any (common in some .env formats)
@@ -39,6 +41,7 @@ func LoadConfig() *Config {
 		EngineIDDeka:    getEnv("ENGINE_ID_DEKA", "sue-ai-search_1768730959752"),
 		EngineIDLaw:     getEnv("ENGINE_ID_LAW", "sue-ai-legal-unified-v3"),
 		GeminiAPIKey:    key,
+		CredentialsFile: getEnv("GOOGLE_APPLICATION_CREDENTIALS", ""),
 	}
 
 	// Debug: Log loaded config values

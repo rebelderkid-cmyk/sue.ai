@@ -7,18 +7,19 @@ import (
 	"os"
 
 	"github.com/google/generative-ai-go/genai"
+	"github.com/joho/godotenv"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 func main() {
-	ctx := context.Background()
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		// Try to read from .env manually or fallback
-		apiKey = "AIzaSyB6t5VFdMSX-rMMVQ7rmvpe_dxqNHIIamA" // From previous view_file of .env
+	// Load .env to get API Key
+	if err := godotenv.Load("../../.env"); err != nil {
+		log.Fatal("Error loading .env file")
 	}
 
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +27,7 @@ func main() {
 	defer client.Close()
 
 	iter := client.ListModels(ctx)
-	fmt.Println("Available Gemini Models:")
+	fmt.Println("🔎 Checking Available Models...")
 	for {
 		m, err := iter.Next()
 		if err == iterator.Done {
@@ -35,18 +36,14 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// Filter only generateContent supported models
-		if supportsGenerateContent(m) {
-			fmt.Printf("- %s (%s) - version: %s\n", m.Name, m.DisplayName, m.Version)
+		// Filter only "generateContent" capable models
+		if m.SupportedGenerationMethods != nil {
+			for _, method := range m.SupportedGenerationMethods {
+				if method == "generateContent" {
+					fmt.Printf("- %s\n", m.Name)
+					break
+				}
+			}
 		}
 	}
-}
-
-func supportsGenerateContent(m *genai.ModelInfo) bool {
-	for _, method := range m.SupportedGenerationMethods {
-		if method == "generateContent" {
-			return true
-		}
-	}
-	return false
 }

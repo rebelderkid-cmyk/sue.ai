@@ -1,0 +1,35 @@
+# .gcloudignore matches .gitignore but allows service-account.json for build
+.git
+.gitignore
+*.log
+logs/
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tgz
+*.pdf
+*.jsonl
+*.csv
+*.xlsx
+*.db
+*.sqlite
+archive/
+data/
+outputs/
+temp/
+tmp/
+
+# Explicitly Allow service-account.json
+!service-account.json

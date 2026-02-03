@@ -23,5 +23,6 @@ func RegisterRoutes(r *gin.Engine, h *Handler) {
 	api := r.Group("/api")
 	{
 		api.POST("/chat", h.ChatStream)
+		api.POST("/research", h.ResearchHandler)
 	}
 }

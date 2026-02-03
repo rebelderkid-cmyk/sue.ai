@@ -20,7 +20,17 @@ type RAGService struct {
 
 func NewRAGService(ctx context.Context, cfg *config.Config) (*RAGService, error) {
 	// 1. Init Vertex AI Search Client
-	searchClient, err := discoveryengine.NewSearchClient(ctx)
+	// IF running on Cloud Run with Default Service Account, NewSearchClient() works automatically via ADC.
+	var searchClient *discoveryengine.SearchClient
+	var err error
+
+	if cfg.CredentialsFile != "" {
+		searchClient, err = discoveryengine.NewSearchClient(ctx, option.WithCredentialsFile(cfg.CredentialsFile))
+	} else {
+		// Use ADC (Application Default Credentials) - Ideal for Cloud Run
+		searchClient, err = discoveryengine.NewSearchClient(ctx)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discovery engine client: %w", err)
 	}
@@ -38,7 +48,7 @@ func NewRAGService(ctx context.Context, cfg *config.Config) (*RAGService, error)
 	}
 
 	// Configure Model
-	model := genClient.GenerativeModel("gemini-3-flash-preview") // Verified: Gemini 3 Flash Preview (Dec 2025)
+	model := genClient.GenerativeModel("gemini-3-flash-preview") // UPGRADING TO GEMINI 3.0 FLASH!
 	model.SetTemperature(0.4)                                    // Optimized for consistency
 
 	return &RAGService{

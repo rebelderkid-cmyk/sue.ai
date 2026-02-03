@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
+	"sue-ai-backend/internal/rag"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,187 +17,164 @@ import (
 // ResearchRequest structure
 type ResearchRequest struct {
 	Query string `json:"query" binding:"required"`
+	Page  int    `json:"page"` // 0-based index
 }
 
 // CaseSummary defines the structure for the AI-generated table row
 type CaseSummary struct {
 	CaseID        string `json:"case_id"`
 	Year          string `json:"year"`
-	Facts         string `json:"facts"`          // ข้อเท็จจริงย่อ
-	LegalIssue    string `json:"legal_issue"`    // ประเด็นข้อกฎหมาย
-	Ruling        string `json:"ruling"`         // คำวินิจฉัยย่อ
-	Reasoning     string `json:"reasoning"`      // เหตุผลประกอบ (สั้นๆ)
-	LawyerOpinion string `json:"lawyer_opinion"` // ความเห็น/กลยุทธ์สำหรับทนาย
-	PdfURL        string `json:"pdf_url"`        // URL to original PDF
+	Facts         string `json:"facts"`
+	LegalIssue    string `json:"legal_issue"`
+	Ruling        string `json:"ruling"`
+	Reasoning     string `json:"reasoning"`
+	LawyerOpinion string `json:"lawyer_opinion"`
+	PdfURL        string `json:"pdf_url"`
 }
 
-// ResearchHandler handles the contextual search & table summary request
+// ResearchHandler handles the contextual search with Batch Streaming for Order Guarantee
 func (h *Handler) ResearchHandler(c *gin.Context) {
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+
+	var mu sync.Mutex
+	sendEvent := func(eventType string, data interface{}) {
+		mu.Lock()
+		defer mu.Unlock()
+		jsonData, _ := json.Marshal(data)
+		fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", eventType, jsonData)
+		c.Writer.Flush()
+	}
+
 	var req ResearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.sendError(c.Writer, "Invalid request body")
 		return
 	}
 
-	// 1. Search for Relevant Cases
-	log.Printf("🔍 Researching: %s", req.Query)
+	limit := 5
+	offset := req.Page * limit
+
+	log.Printf("⏱️ [START] Research: %s (Page: %d)", req.Query, req.Page)
+	sendEvent("status", gin.H{"message": "🔍 กำลังประมวลผลคำค้นหา..."})
 
 	ctx := c.Request.Context()
+	optimizePrompt := h.RAG.OptimizeQueries(ctx, req.Query)
 
-	// Optimize the query first
-	optimizedQueries := h.RAG.OptimizeQueries(ctx, req.Query)
-
-	// Perform Search - fetch more candidates (15) to let AI filter the best 5
-	searchResults, err := h.RAG.Search(ctx, optimizedQueries, nil)
+	// 1. Search (Fetch pool)
+	fetchLimit := 100
+	searchResults, err := h.RAG.Search(ctx, optimizePrompt, map[string]interface{}{"limit": fetchLimit})
 	if err != nil {
-		h.sendError(c.Writer, fmt.Sprintf("Search failed: %v", err))
+		sendEvent("error", gin.H{"message": "Search failed"})
 		return
 	}
 
-	// Create Map for URL Lookup (Normalize ID by stripping "Deka_" prefix if needed)
-	urlMap := make(map[string]string)
-	for _, res := range searchResults {
-		// Normalize ID for matching (e.g. "1234/2565")
-		// The search result ID is usually consistent with what AI sees if we prompt correctly.
-		// AI sees "Title" which often contains the ID.
-		if res.ID != "" {
-			urlMap[res.ID] = res.Link
-		}
-		// Fallback: Also map by Title just in case
-		urlMap[res.Title] = res.Link
+	// 2. Pagination
+	if offset >= len(searchResults) {
+		sendEvent("done", gin.H{"message": "No more results"})
+		return
+	}
+	end := offset + limit
+	if end > len(searchResults) {
+		end = len(searchResults)
 	}
 
-	// Dynamic Truncate & Filter Candidates
-	var candidateContexts []string
-	limit := 10 // Reduce from 15 to 10 for speed
-	if len(searchResults) < limit {
-		limit = len(searchResults)
-	}
-
-	for i := 0; i < limit; i++ {
-		doc := searchResults[i]
-		// Limit content length to save tokens (approx 800 chars per doc for selection phase)
-		content := doc.Content
-		if len(content) > 800 {
-			content = content[:800] + "...(truncated)"
-		}
-		// Include Date/Year info explicitly if available in metadata, otherwise rely on Title/Content
-		// IMPORTANT: We pass the 'doc.ID' clearly so AI uses it exactly.
-		candidateContexts = append(candidateContexts, fmt.Sprintf("CANDIDATE #%d (ID: %s, Title: %s):\n%s", i+1, doc.ID, doc.Title, content))
-	}
-
-	fullContext := strings.Join(candidateContexts, "\n\n----------------\n\n")
-
-	// 2. Construct Prompt for Intelligent Selection & Table Generation
-	systemPrompt := `You are an expert Senior Legal Advisor specializing in Thai Law.
-Your goal is to assist a lawyer by selecting and summarizing the most relevant case laws (Deka).
-
-TASK:
-1. Review the provided 10 candidate cases.
-2. **SELECT only the TOP 5 cases** based on these criteria:
-   - **Recency:** Prioritize the most recent cases (Newest Year).
-   - **Diversity:** Try to include cases with different outcomes (e.g., Employer wins vs. Employee wins) to show the full legal landscape.
-3. For the selected 5 cases, generate a comparison table JSON.
-
-LANGUAGE RULES (Critical):
-- **Detect the language of the User's Search Query.**
-- If the User asks in **THAI**, respond entirely in **THAI**.
-- If the User asks in **ENGLISH**, respond entirely in **ENGLISH** (translate facts, issues, rulings, etc.).
-
-OUTPUT FORMAT (JSON Array):
-[
-  {
-    "case_id": "1234/2565",
-    "year": "2565",
-    "facts": "Brief facts of the case...",
-    "legal_issue": "Main legal question...",
-    "ruling": "The court's decision...",
-    "reasoning": "Key legal reasoning...",
-    "lawyer_opinion": "Strategic advice for the lawyer..."
-  }
-]
-
-IMPORTANT: 
-- Use the exact 'ID' provided in the candidate list for "case_id".
-
-RULES:
-- Output MUST be valid JSON only.`
-
-	userPrompt := fmt.Sprintf("Search Query: \"%s\"\n\nCandidate Cases:\n%s", req.Query, fullContext)
-
-	// 3. Generate Content using Gemini
-	h.RAG.GenModel.SetTemperature(0.2) // Slightly higher temp for creative selection
-
-	resp, err := h.RAG.GenModel.GenerateContent(ctx,
-		genai.Text(systemPrompt),
-		genai.Text(userPrompt),
-	)
-	if err != nil {
-		h.sendError(c.Writer, fmt.Sprintf("Analysis failed: %v", err))
+	targetDocs := searchResults[offset:end]
+	if len(targetDocs) == 0 {
+		sendEvent("done", gin.H{"message": "No results found"})
 		return
 	}
 
-	// Log Token Usage
-	if resp.UsageMetadata != nil {
-		log.Printf("💰 Research Request Cost: Input=%d, Output=%d, Total=%d Tokens",
-			resp.UsageMetadata.PromptTokenCount,
-			resp.UsageMetadata.CandidatesTokenCount,
-			resp.UsageMetadata.TotalTokenCount,
-		)
-	}
+	sendEvent("status", gin.H{"message": fmt.Sprintf("⚡️ ตรวจพบ %d ฎีกาที่เกี่ยวข้อง กำลังวิเคราะห์เชิงลึก...", len(targetDocs))})
 
-	// 4. Parse & Clean Output
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		h.sendError(c.Writer, "AI returned empty response")
-		return
-	}
+	// 3. Parallel AI Generation but collected in order
+	results := make([]CaseSummary, len(targetDocs))
+	var wg sync.WaitGroup
 
-	rawJSON := ""
-	if txt, ok := resp.Candidates[0].Content.Parts[0].(genai.Text); ok {
-		rawJSON = string(txt)
-	}
+	for i, doc := range targetDocs {
+		wg.Add(1)
+		go func(idx int, document rag.SearchResult) {
+			defer wg.Done()
 
-	// Clean Markdown
-	rawJSON = strings.TrimSpace(rawJSON)
-	if strings.HasPrefix(rawJSON, "```json") {
-		rawJSON = strings.TrimPrefix(rawJSON, "```json")
-		rawJSON = strings.TrimSuffix(rawJSON, "```")
-	} else if strings.HasPrefix(rawJSON, "```") {
-		rawJSON = strings.TrimPrefix(rawJSON, "```")
-		rawJSON = strings.TrimSuffix(rawJSON, "```")
-	}
-
-	// Validate JSON
-	var summaries []CaseSummary
-	if err := json.Unmarshal([]byte(rawJSON), &summaries); err != nil {
-		log.Printf("❌ JSON Parse Error: %v\nRaw Output: %s", err, rawJSON)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to parse AI response",
-			"raw":   rawJSON,
-		})
-		return
-	}
-
-	// 5. Inject PDF URLs (Post-Processing)
-	for i, s := range summaries {
-		// Try exact match
-		if url, ok := urlMap[s.CaseID]; ok {
-			summaries[i].PdfURL = url
-		} else {
-			// Try fuzzy match (if AI stripped/added something)
-			for id, link := range urlMap {
-				if strings.Contains(id, s.CaseID) || strings.Contains(s.CaseID, id) {
-					summaries[i].PdfURL = link
-					break
+			content := document.Content
+			if len(content) > 3000 {
+				runes := []rune(content)
+				if len(runes) > 2000 {
+					content = string(runes[:1000]) + "\n...\n" + string(runes[len(runes)-1000:])
 				}
 			}
-		}
+
+			prompt := fmt.Sprintf(`Analyze this Thai Deka Case.
+CASE: %s (ID: %s)
+CONTENT: %s
+
+OUTPUT JSON ONLY:
+{
+	"case_id": "%s",
+	"year": "%s",
+	"facts": "Summarize facts < 2 sentences",
+	"legal_issue": "Main legal issue < 1 sentence",
+	"ruling": "Ruling < 2 sentences",
+	"reasoning": "Reasoning < 2 sentences",
+	"lawyer_opinion": "Key strategy/takeaway for lawyer"
+}
+Key Rules: Respond in THAI. Valid JSON.`, document.ID, content, document.ID, document.Year)
+
+			genCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+
+			genResp, genErr := h.RAG.GenModel.GenerateContent(genCtx, genai.Text(prompt))
+
+			summary := CaseSummary{
+				CaseID: document.ID,
+				Year:   document.Year,
+				PdfURL: document.Link,
+			}
+			if summary.CaseID == "" || strings.Contains(summary.CaseID, "Deka_") {
+				summary.CaseID = document.Title
+			}
+
+			success := false
+			if genErr == nil && len(genResp.Candidates) > 0 {
+				if txtPart, ok := genResp.Candidates[0].Content.Parts[0].(genai.Text); ok {
+					txt := string(txtPart)
+					txt = strings.TrimSpace(txt)
+					txt = strings.ReplaceAll(txt, "```json", "")
+					txt = strings.ReplaceAll(txt, "```", "")
+
+					var parsed map[string]string
+					if json.Unmarshal([]byte(txt), &parsed) == nil {
+						summary.Facts = parsed["facts"]
+						summary.LegalIssue = parsed["legal_issue"]
+						summary.Ruling = parsed["ruling"]
+						summary.Reasoning = parsed["reasoning"]
+						summary.LawyerOpinion = parsed["lawyer_opinion"]
+						if v, ok := parsed["case_id"]; ok && len(v) < 50 {
+							summary.CaseID = v
+						}
+						success = true
+					}
+				}
+			}
+
+			if !success {
+				summary.Facts = document.Snippet
+				summary.LawyerOpinion = "AI ไม่สามารถสรุปข้อมูลได้ในขณะนี้"
+			}
+
+			results[idx] = summary
+
+		}(i, doc)
 	}
 
-	// 6. Return Success Response
-	c.JSON(http.StatusOK, gin.H{
-		"query":     req.Query,
-		"results":   summaries,
-		"timestamp": time.Now(),
-	})
+	// Wait for ALL AI analysis to finish
+	wg.Wait()
+
+	// 4. Send items in strict chronological order
+	for _, summary := range results {
+		sendEvent("result_item", summary)
+	}
+
+	sendEvent("done", gin.H{"message": "Page Complete"})
 }

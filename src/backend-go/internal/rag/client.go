@@ -48,8 +48,8 @@ func NewRAGService(ctx context.Context, cfg *config.Config) (*RAGService, error)
 	}
 
 	// Configure Model
-	model := genClient.GenerativeModel("gemini-3-flash-preview") // UPGRADING TO GEMINI 3.0 FLASH!
-	model.SetTemperature(0.4)                                    // Optimized for consistency
+	model := genClient.GenerativeModel("gemini-2.5-flash-preview-09-2025") // User Requested High-End Model 🚀
+	model.SetTemperature(0.4)                                              // Optimized for consistency
 
 	return &RAGService{
 		SearchClient: searchClient,

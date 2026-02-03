@@ -20,31 +20,32 @@ type OptimizedQueries struct {
 func (s *RAGService) OptimizeQueries(ctx context.Context, userQuestion string) OptimizedQueries {
 	prompt := fmt.Sprintf(`
 Role: คุณเป็นผู้เชี่ยวชาญด้านการค้นหาข้อมูลกฎหมายไทย (Expert Legal Search Operator)
-Task: แปลงคำถามของผู้ใช้เป็น 2 SEARCH QUERIES แยกกันเพื่อใช้ใน RAG System
+Task: แปลงคำถามของผู้ใช้เป็น 2 SEARCH QUERIES แยกกันเพื่อใช้ใน RAG System ของ Google Vertex Search
 
 คำถามเดิม: "%s"
 
 === หลักการสร้างคำค้นหา (Searching Principles) ===
 
 1. **DEKA_QUERY** (สำหรับค้นหาคำพิพากษาศาลฎีกา):
-   - เน้นคำค้นหาที่เกี่ยวข้องกับ "บรรทัดฐาน" และ "ข้อเท็จจริง"
-   - **ความสดใหม่ (Recency)**: ใส่คำว่า "ปีล่าสุด" หรือ "ปัจจุบัน" เพื่อให้ได้บรรทัดฐานที่ทันสมัยที่สุด
-   - ตัวอย่าง: "ฎีกา ฉ้อโกง บรรยายฟ้อง ไม่สุจริต ปีล่าสุด 2567"
+   - เน้น "คำสำคัญทางกฎหมาย" (Legal Keywords) และ "ข้อเท็จจริงหลัก" (Key Facts)
+   - ตัดคำฟุ่มเฟือยออก ให้เหลือแต่ใจความสำคัญ เพื่อให้ Search Engine ทำงานได้ดีที่สุด
+   - **ข้อห้าม**: ห้ามใส่คำว่า "ปีล่าสุด", "พ.ศ.", "ปัจจุบัน" หรือระบุปี พ.ศ. ลงไปใน Query (เพราะจะทำให้ Search Engine กรองผิด จนหาไม่เจอ)
+   - ตัวอย่าง: "ฉ้อโกง บรรยายฟ้อง ไม่สุจริต หลอกลวง" (ถูกต้อง)
+   - ตัวอย่างผิด: "ฎีกาฉ้อโกงปีล่าสุด 2567" (ผิด)
 
-2. **LAW_QUERY** (สำหรับกฎหมาย - สำคัญมาก!):
-   - **ลำดับศักดิ์กฎหมาย (Hierarchy)**: เรียงลำดับจาก รัฐธรรมนูญ > ประมวลกฎหมาย > พ.ร.บ. > พ.ร.ฎ. > กฎกระทรวง
-   - **ความสดใหม่ (Recency)**: เน้นการค้นหาปีปัจจุบันหรือปีล่าสุดเพื่อให้ได้ข้อมูลที่อัปเดตที่สุด
-   - **สถานะ (Validity)**: เน้นหาฉบับที่ "แก้ไขเพิ่มเติมล่าสุด" และระวังฉบับที่ "ถูกยกเลิก"
-   - **ตัวอย่าง**: "พ.ร.บ. กู้ยืมเงินที่เป็นการฉ้อโกงประชาชน ฉบับล่าสุด ปี 2567" หรือ "ประมวลกฎหมายอาญา มาตรา 341 ล่าสุด"
+2. **LAW_QUERY** (สำหรับกฎหมาย):
+   - **ชื่อกฎหมาย**: ระบุชื่อกฎหมายที่เกี่ยวข้องให้ชัดเจน
+   - **มาตรา**: ถ้าทราบ หรือคาดเดาได้ ให้ระบุเลขมาตรา
+   - **ตัวอย่าง**: "ประมวลกฎหมายอาญา มาตรา 288 289 ฆ่าผู้อื่น", "พ.ร.บ.อาวุธปืน"
 
 Guidelines:
-- ห้ามใช้คำฟุ่มเฟือย
-- ใส่คำว่า "ฉบับล่าสุด" หรือ "ปีล่าสุด" ใน LAW_QUERY เสมอถ้าเป็นไปได้
+- DEKA_QUERY: ขอ keywords เน้นๆ 3-5 คำ ที่ตรงประเด็นที่สุด
+- LAW_QUERY: ขอชื่อกฎหมายที่ถูกต้องและมาตราที่เกี่ยวข้อง
 - Output เฉพาะผลลัพธ์ตาม Format เท่านั้น
 
 Output Format:
 DEKA: [query สำหรับศาลฎีกา]
-LAW: [query สำหรับกฎหมายล่าสุด]
+LAW: [query สำหรับกฎหมาย]
 CATEGORY: [civil|criminal|labor|procedure|general]
 `, userQuestion)
 
@@ -63,8 +64,8 @@ CATEGORY: [civil|criminal|labor|procedure|general]
 
 			// Parse the output
 			queries := parseOptimizedQueries(output, userQuestion)
-			log.Printf("🔹 DEKA Query: %s", queries.DekaQuery)
-			log.Printf("🔹 LAW Query: %s", queries.LawQuery)
+			log.Printf("🔹 DEKA Optimized: %s", queries.DekaQuery)
+			log.Printf("🔹 LAW Optimized: %s", queries.LawQuery)
 			return queries
 		}
 	}
@@ -98,13 +99,5 @@ func parseOptimizedQueries(output string, fallback string) OptimizedQueries {
 			}
 		}
 	}
-
 	return result
-}
-
-// OptimizeQuery (legacy - single query) for backwards compatibility
-func (s *RAGService) OptimizeQuery(ctx context.Context, userQuestion string) string {
-	queries := s.OptimizeQueries(ctx, userQuestion)
-	// Return DEKA query as default for legacy usage
-	return queries.DekaQuery
 }

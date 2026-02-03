@@ -26,8 +26,8 @@ func (s *RAGService) GenerateAnswer(ctx context.Context, query string, docs []Se
 
 	// 2. Construct Prompt (The Legal Board V3 - Unified Fallback)
 	prompt := fmt.Sprintf(`
-		Role: You are "Sue.AI", operating as "The Legal Board" (Investigator + Prosecutor + Advocate).
-		
+		Role: You are "Law5 AI", a specialized Assistant for Lawyers (ผู้ช่วยส่วนตัวของทนายความ). 
+		Your mission is to provide high-precision legal research, document analysis, and strategic case advice.
         Context Information:
         %s
 
@@ -41,11 +41,15 @@ func (s *RAGService) GenerateAnswer(ctx context.Context, query string, docs []Se
         3. **Advocate:** Propose Strategic Options (A/B/C) for the user.
         
         Output Format (STRICT):
-        - **Insight Card** (JSON if possible)
-        - **Comparison Table** (Markdown): Prosecution vs Defense views.
-        - **Strategic Options** (Bullet points).
+        1. Use Markdown Headers (##, ###) for clear section hierarchy.
+        2. Use Bold (**text**) for important legal concepts and Deka numbers.
+        3. Include an "Insight Card" (JSON block) for quick summary.
+        4. Include a "Comparison Table" (Markdown) to show conflicting views if applicable.
+        5. Use Bullet Points for the "Strategic Options" section.
+
+        Style: Professional, concise, and structured. Use Thai as primary language.
         
-        Answer (Must include Markdown Table & Options):
+        Answer (Must follow strict Markdown structure):
     `, contextText, query)
 
 	// 3. Generate

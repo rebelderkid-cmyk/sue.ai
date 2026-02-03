@@ -15,7 +15,7 @@ export default function Home() {
             {/* Footer Placeholder for visual balance */}
             <footer className="border-t py-12 bg-muted/30">
                 <div className="container mx-auto px-4 md:px-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; 2026 Sue.Ai Inc. All rights reserved.</p>
+                    <p>&copy; 2026 Law5 AI. All rights reserved.</p>
                 </div>
             </footer>
         </main>

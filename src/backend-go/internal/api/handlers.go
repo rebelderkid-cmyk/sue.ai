@@ -99,9 +99,9 @@ func (h *Handler) ChatStream(c *gin.Context) {
 		startGen := time.Now()
 		contextText := ""
 		// OPTIMIZATION: Reduced Limits for Faster Response ⚡️
-		maxContextPerDoc := 10000 // Reduced from 30,000
+		maxContextPerDoc := 2000 // Reduced from 10,000 to Speed up!
 		if req.DeepSearch {
-			maxContextPerDoc = 50000 // Reduced from 200,000
+			maxContextPerDoc = 5000 // Reduced from 50,000
 		}
 
 		// Reorder: LAW first, then DEKA
@@ -117,28 +117,48 @@ func (h *Handler) ChatStream(c *gin.Context) {
 			}
 		}
 
-		limit := 12 // Reduced from 30 docs
+		limit := 5 // Reduced from 12 to 5 (Focus on Top Results)
 		for i, doc := range contextDocs {
 			if i >= limit {
 				break
 			}
 			textContent := doc.Snippet
-			if textContent == "" {
-				textContent = doc.Content
-			}
-			if textContent == "" {
-				if ft, ok := doc.Meta["full_text"].(string); ok {
-					textContent = ft
+
+			// Strategy: Use Snippet if available and meaningful length (> 200 chars)
+			// Otherwise fallback to Smart Content Truncation
+			if len(textContent) < 200 {
+				fullContent := doc.Content
+				if ft, ok := doc.Meta["full_text"].(string); ok && len(ft) > len(fullContent) {
+					fullContent = ft
+				}
+
+				// Smart Truncate: Head (Facts) + Tail (Ruling)
+				// Deka structure is usually Facts -> Reasoning -> Ruling
+				runes := []rune(sanitizeUTF8(fullContent))
+				totalLen := len(runes)
+
+				if totalLen > maxContextPerDoc {
+					// Take first 40% of quota for Head, last 60% for Tail (Rules usually at end)
+					headLen := int(float64(maxContextPerDoc) * 0.4)
+					tailLen := maxContextPerDoc - headLen
+
+					if totalLen > (headLen + tailLen + 100) {
+						textContent = string(runes[:headLen]) + "\n...[เนื้อหาถูกย่อ]...\n" + string(runes[totalLen-tailLen:])
+					} else {
+						textContent = string(runes)
+					}
+				} else {
+					textContent = fullContent
 				}
 			}
 
-			textContent = sanitizeUTF8(textContent)
-			if utf8.RuneCountInString(textContent) > maxContextPerDoc {
+			// Final Safety check
+			if utf8.RuneCountInString(textContent) > maxContextPerDoc+200 {
 				runes := []rune(textContent)
 				textContent = string(runes[:maxContextPerDoc]) + "..."
 			}
 
-			sourceHeader := fmt.Sprintf("[%s] %s", doc.Source, doc.Title)
+			sourceHeader := fmt.Sprintf("[%s] %s (ID: %s)", doc.Source, doc.Title, doc.ID)
 			contextText += fmt.Sprintf("=== %s ===\n%s\n\n", sourceHeader, textContent)
 		}
 

@@ -53,8 +53,9 @@ export const useChatStore = create<ChatState>()(
         (set, get) => ({
             sessions: {},
             activeSessionId: null,
-            
-            // UI State Defaults
+
+
+            // UI State Defaults (Updated for Cloud Build)
             isMobileOpen: false,
             isDesktopOpen: true,
 

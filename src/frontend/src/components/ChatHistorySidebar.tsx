@@ -72,35 +72,49 @@ export function ChatHistorySidebar({
                 "w-72",
                 className
             )}>
-                {/* Header Actions */}
-                <div className="flex items-center justify-between p-3 pb-2">
-                    {/* Close Button (Mobile Only) */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="md:hidden text-muted-foreground"
-                        onClick={onMobileClose}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
+                {/* Header: Logo & Collapse Action */}
+                <div className="flex items-center justify-between p-4 pb-2">
+                    <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
+                            L5
+                        </div>
+                        <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-800 to-purple-800">
+                            Law5.ai
+                        </span>
+                    </div>
 
-                    {/* Collapse Button (Desktop Only - Inside Sidebar) */}
-                    <div className="flex-1 flex justify-end">
+                    <div className="flex items-center gap-1">
+                        {/* Mobile Close */}
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="hidden md:flex text-muted-foreground hover:text-primary"
+                            className="md:hidden text-zinc-400"
+                            onClick={onMobileClose}
+                        >
+                            <X className="h-5 w-5" />
+                        </Button>
+
+                        {/* Desktop Collapse */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="hidden md:flex text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg"
                             onClick={toggleDesktop}
-                            title="ซ่อนแถบเมนู"
+                            title="ซ่อนเมนู"
                         >
                             <PanelLeftClose className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="space-y-4 px-3 pb-4 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+                <div className="space-y-4 px-3 pb-4 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar mt-2">
+
                     <Button onClick={handleNewChat} className="w-full justify-start gap-2 mb-2 shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white border-transparent hover:border-indigo-500 rounded-xl py-6">
                         <Plus size={18} /> New Chat
+                    </Button>
+
+                    <Button onClick={() => router.push('/search')} variant="outline" className="w-full justify-start gap-2 mb-6 shadow-none border-dashed border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl py-6 text-zinc-600 dark:text-zinc-300">
+                        <span className="text-xl">⚖️</span> Research Tools
                     </Button>
 
                     <h2 className="mb-2 px-2 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase flex items-center gap-2 opacity-70">

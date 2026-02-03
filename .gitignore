@@ -4,6 +4,10 @@ Thumbs.db
 *.log
 logs/
 *.pem
+.env
+.env.*
+**/.env
+**/.env.*
 
 # === DEPENDENCIES (Recursive) ===
 node_modules/

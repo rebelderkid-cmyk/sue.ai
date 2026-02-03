@@ -10,8 +10,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sue.Ai | The Next Generation AI Interface",
-  description: "Experience the future of intelligence with Sue.Ai.",
+  title: "Law5 AI | ผู้ช่วยอัจฉริยะส่วนตัวของทนายความ",
+  description: "ระบบสืบค้นฎีกาและช่วยเหลืองานทนายด้วย AI อัจฉริยะ",
 };
 
 export const viewport: Viewport = {

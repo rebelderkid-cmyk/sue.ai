@@ -2,7 +2,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Bot, User, ArrowLeft, Sparkles, X, BookOpen, Gavel, Scale, Menu, ExternalLink, Brain, BrainCircuit, Database, Loader2, Clock } from "lucide-react"
+import { Send, Bot, User, ArrowLeft, Sparkles, X, BookOpen, Gavel, Scale, Menu, ExternalLink, Brain, BrainCircuit, Database, Loader2, Clock, PanelLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -344,8 +344,8 @@ function ChatContent() {
             />
 
             <div className="flex flex-col flex-1 h-full min-w-0 transition-all duration-300">
-                <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 shrink-0">
-                    <div className="container flex h-14 items-center px-4 md:px-6">
+                <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 shrink-0">
+                    <div className="container flex h-full items-center px-4 md:px-6">
                         <Link href="/" className="mr-4 flex items-center space-x-2 transition-colors hover:text-foreground/80 text-muted-foreground hover:text-primary md:hidden">
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
@@ -355,15 +355,20 @@ function ChatContent() {
                                 <Menu className="h-5 w-5" />
                             </Button>
 
-                            {/* Desktop Sidebar Toggle (Visible only on Desktop when closed) */}
-                            {!desktopSidebarOpen && (
-                                <Button variant="ghost" size="icon" className="hidden md:flex mr-2 text-muted-foreground hover:text-primary transition-all" onClick={() => setDesktopSidebarOpen(true)}>
-                                    <Menu className="h-5 w-5" />
-                                </Button>
-                            )}
+                            {/* Desktop Sidebar Toggle */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="hidden md:flex mr-2 text-muted-foreground hover:text-primary transition-all rounded-lg"
+                                onClick={() => setDesktopSidebarOpen(!desktopSidebarOpen)}
+                                title={desktopSidebarOpen ? "ซ่อนเมนู" : "แสดงเมนู"}
+                            >
+                                <PanelLeft className="h-5 w-5" />
+                            </Button>
+
                             <div className="flex items-center gap-2">
-                                <span className="font-bold inline-block">The Legal Board</span>
-                                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">Public Beta</span>
+                                <span className="font-bold inline-block text-zinc-800">Law5 AI</span>
+                                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold">AI Neuro</span>
                             </div>
                         </div>
                     </div>
@@ -513,8 +518,12 @@ function ChatContent() {
                                                         urlTransform={(url) => url}
                                                         components={{
                                                             p: ({ children }: any) => <div className="mb-4 last:mb-0 leading-relaxed">{children}</div>,
-                                                            ul: ({ children }: any) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
-                                                            ol: ({ children }: any) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
+                                                            h1: ({ children }: any) => <h1 className="text-2xl font-bold mt-6 mb-4 text-foreground border-b pb-2">{children}</h1>,
+                                                            h2: ({ children }: any) => <h2 className="text-xl font-bold mt-5 mb-3 text-foreground tracking-tight">{children}</h2>,
+                                                            h3: ({ children }: any) => <h3 className="text-lg font-bold mt-4 mb-2 text-foreground">{children}</h3>,
+                                                            strong: ({ children }: any) => <strong className="font-bold text-foreground">{children}</strong>,
+                                                            ul: ({ children }: any) => <ul className="list-disc ml-6 mb-4 space-y-1">{children}</ul>,
+                                                            ol: ({ children }: any) => <ol className="list-decimal ml-6 mb-4 space-y-1">{children}</ol>,
                                                             li: ({ children }: any) => <li className="mb-1">{children}</li>,
                                                             // Custom Link Handler for Smart Citations (High-Fidelity)
                                                             a: ({ href, children }: any) => {
@@ -691,14 +700,14 @@ function ChatContent() {
                                                             td: ({ children }: any) => <td className="px-4 py-3 border-b border-border/50 last:border-0 align-top">{children}</td>,
                                                         }}
                                                     >
-                                                        {/* Pre-process text to turn keywords into fake links */}
+                                                        {/* Pre-process text to turn keywords into fake links - Added boundaries to prevent breaking existing links/bold */}
                                                         {typeof contentToRender === 'string' ? contentToRender
-                                                            // Linkify 'ฎีกา(ที่) X/Y' -> [text](cite:deka:ID)
-                                                            .replace(/(ฎีกา(?:ที่)?\s*(\d+\/\d+))/g, '[$1](cite:deka:$2)')
-                                                            // Linkify 'มาตรา X' (รองรับทั้ง 123 และ ๑๒๓)
-                                                            .replace(/(มาตรา\s*[0-9๐-๙]+(?:\s*(?:ทวิ|ตรี|จัตวา))?(?:(?:\s*,\s*| และ )[0-9๐-๙]+)*)/g, '[$1](cite:law:$1)')
+                                                            // Linkify 'ฎีกา(ที่) X/Y' -> [text](cite:deka:ID) 
+                                                            .replace(/(?<!\[)(ฎีกา(?:ที่)?\s*(\d+\/\d+))(?!\()/g, '[$1](cite:deka:$2)')
+                                                            // Linkify 'มาตรา X'
+                                                            .replace(/(?<!\[)(มาตรา\s*[0-9๐-๙]+(?:\s*(?:ทวิ|ตรี|จัตวา))?(?:(?:\s*,\s*| และ )[0-9๐-๙]+)*)(?!\()/g, '[$1](cite:law:$1)')
                                                             // Linkify 'ป.อ.' 'ป.พ.พ.' + Section
-                                                            .replace(/((?:ป\.อ\.|ป\.พ\.พ\.|ป\.วิ\.อ\.|ป\.วิ\.พ\.)\s*มาตรา\s*[0-9๐-๙]+)/g, '[$1](cite:law:$1)')
+                                                            .replace(/(?<!\[)((?:ป\.อ\.|ป\.พ\.พ\.|ป\.วิ\.อ\.|ป\.วิ\.พ\.)\s*มาตรา\s*[0-9๐-๙]+)(?!\()/g, '[$1](cite:law:$1)')
                                                             : ''}
                                                     </ReactMarkdown>
                                                 </div>
@@ -706,7 +715,7 @@ function ChatContent() {
                                         );
                                     })()}
 
-                                    <SourceList sources={msg.sources || []} setSelectedSource={setSelectedSource} />
+                                    {/* SourceList removed as citations are now inline */}
                                 </div >
                             </motion.div>
                         ))}
@@ -722,8 +731,8 @@ function ChatContent() {
                                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-4">
                                         <Scale className="h-8 w-8 text-primary" />
                                     </div>
-                                    <h2 className="text-2xl font-bold mb-2">Sue.AI</h2>
-                                    <p className="text-muted-foreground">ผู้ช่วยค้นคว้าข้อมูลทางกฎหมายสำหรับทนายความ</p>
+                                    <h2 className="text-2xl font-bold mb-2">Law5 AI</h2>
+                                    <p className="text-muted-foreground">ผู้ช่วยอัจฉริยะส่วนตัวของทนายความ (Your AI Legal Assistant)</p>
                                 </div>
 
                                 <div className="w-full max-w-2xl space-y-3">

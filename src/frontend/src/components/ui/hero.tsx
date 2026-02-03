@@ -18,7 +18,7 @@ export function Hero() {
                     >
                         <span className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium bg-secondary text-secondary-foreground mb-4">
                             <Sparkles className="mr-2 h-3 w-3" />
-                            The Palantir of Legal Tech
+                            Law5 AI: The Next-Gen Legal Interface
                         </span>
                         <h1 className="text-4xl font-extrabold tracking-tight lg:text-6xl max-w-5xl mx-auto">
                             Transforming Data into <br className="hidden md:block" />
@@ -27,7 +27,7 @@ export function Hero() {
                             </span>
                         </h1>
                         <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-                            Sue.Ai is the Legal Operating System that fuses Supreme Court decisions, regulations, and case documents into winning strategies. From delay to speed, from risk to confidence.
+                            Law5 AI คือระบบปฏิบัติการกฎหมาย (Legal OS) ที่ช่วยทนายความวิเคราะห์คำพิพากษาศาลฎีกา ระเบียบ และข้อบังคับ เพื่อสร้างความได้เปรียบในเชิงคดีจากข้อมูลที่แม่นยำ
                         </p>
                     </motion.div>
 
@@ -38,14 +38,17 @@ export function Hero() {
                         transition={{ duration: 0.5, delay: 0.2 }}
                     >
                         <Link href="/chat">
-                            <Button size="lg" className="min-w-[180px] text-base group w-full sm:w-auto">
-                                Start Drafting
+                            <Button size="lg" className="min-w-[180px] text-base group w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700">
+                                Start AI Chat
                                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </Button>
                         </Link>
-                        <Button variant="outline" size="lg" className="min-w-[180px] text-base">
-                            View Case Study
-                        </Button>
+                        <Link href="/search">
+                            <Button variant="outline" size="lg" className="min-w-[180px] text-base group w-full sm:w-auto border-indigo-200 hover:bg-indigo-50 text-indigo-700">
+                                <Scale className="mr-2 h-4 w-4" />
+                                Research Tool
+                            </Button>
+                        </Link>
                     </motion.div>
 
                     {/* Branding / Trust Badges */}

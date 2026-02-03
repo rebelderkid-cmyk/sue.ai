@@ -26,6 +26,7 @@ type CaseSummary struct {
 	Ruling        string `json:"ruling"`         // คำวินิจฉัยย่อ
 	Reasoning     string `json:"reasoning"`      // เหตุผลประกอบ (สั้นๆ)
 	LawyerOpinion string `json:"lawyer_opinion"` // ความเห็น/กลยุทธ์สำหรับทนาย
+	PdfURL        string `json:"pdf_url"`        // URL to original PDF
 }
 
 // ResearchHandler handles the contextual search & table summary request
@@ -51,6 +52,19 @@ func (h *Handler) ResearchHandler(c *gin.Context) {
 		return
 	}
 
+	// Create Map for URL Lookup (Normalize ID by stripping "Deka_" prefix if needed)
+	urlMap := make(map[string]string)
+	for _, res := range searchResults {
+		// Normalize ID for matching (e.g. "1234/2565")
+		// The search result ID is usually consistent with what AI sees if we prompt correctly.
+		// AI sees "Title" which often contains the ID.
+		if res.ID != "" {
+			urlMap[res.ID] = res.Link
+		}
+		// Fallback: Also map by Title just in case
+		urlMap[res.Title] = res.Link
+	}
+
 	// Dynamic Truncate & Filter Candidates
 	var candidateContexts []string
 	limit := 10 // Reduce from 15 to 10 for speed
@@ -66,7 +80,8 @@ func (h *Handler) ResearchHandler(c *gin.Context) {
 			content = content[:800] + "...(truncated)"
 		}
 		// Include Date/Year info explicitly if available in metadata, otherwise rely on Title/Content
-		candidateContexts = append(candidateContexts, fmt.Sprintf("CANDIDATE #%d (ID: %s):\n%s", i+1, doc.Title, content))
+		// IMPORTANT: We pass the 'doc.ID' clearly so AI uses it exactly.
+		candidateContexts = append(candidateContexts, fmt.Sprintf("CANDIDATE #%d (ID: %s, Title: %s):\n%s", i+1, doc.ID, doc.Title, content))
 	}
 
 	fullContext := strings.Join(candidateContexts, "\n\n----------------\n\n")
@@ -99,6 +114,9 @@ OUTPUT FORMAT (JSON Array):
     "lawyer_opinion": "Strategic advice for the lawyer..."
   }
 ]
+
+IMPORTANT: 
+- Use the exact 'ID' provided in the candidate list for "case_id".
 
 RULES:
 - Output MUST be valid JSON only.`
@@ -158,7 +176,23 @@ RULES:
 		return
 	}
 
-	// 5. Return Success Response
+	// 5. Inject PDF URLs (Post-Processing)
+	for i, s := range summaries {
+		// Try exact match
+		if url, ok := urlMap[s.CaseID]; ok {
+			summaries[i].PdfURL = url
+		} else {
+			// Try fuzzy match (if AI stripped/added something)
+			for id, link := range urlMap {
+				if strings.Contains(id, s.CaseID) || strings.Contains(s.CaseID, id) {
+					summaries[i].PdfURL = link
+					break
+				}
+			}
+		}
+	}
+
+	// 6. Return Success Response
 	c.JSON(http.StatusOK, gin.H{
 		"query":     req.Query,
 		"results":   summaries,

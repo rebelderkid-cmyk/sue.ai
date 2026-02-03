@@ -27,6 +27,7 @@ interface ComparisonResult {
     ruling: string;
     reasoning: string;
     lawyer_opinion: string;
+    pdf_url?: string;
 }
 
 export default function ResearchPage() {
@@ -164,7 +165,19 @@ export default function ResearchPage() {
                                             {results.map((item, index) => (
                                                 <TableRow key={index} className="hover:bg-muted/30 align-top group transition-colors">
                                                     <TableCell className="font-medium align-top">
-                                                        <div className="text-purple-600 text-base font-bold whitespace-nowrap">{item.case_id}</div>
+                                                        {item.pdf_url ? (
+                                                            <a 
+                                                                href={item.pdf_url} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-purple-600 hover:text-purple-800 hover:underline text-base font-bold whitespace-nowrap flex items-center gap-1"
+                                                            >
+                                                                {item.case_id}
+                                                                <BookOpen className="h-3 w-3 inline" />
+                                                            </a>
+                                                        ) : (
+                                                            <div className="text-purple-600 text-base font-bold whitespace-nowrap">{item.case_id}</div>
+                                                        )}
                                                         <div className="text-muted-foreground text-xs mt-1 bg-muted px-1.5 py-0.5 rounded w-fit">{item.year}</div>
                                                     </TableCell>
                                                     <TableCell className="align-top leading-relaxed text-sm text-foreground/90">

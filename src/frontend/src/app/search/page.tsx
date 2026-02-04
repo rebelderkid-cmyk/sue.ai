@@ -151,6 +151,16 @@ export default function ResearchPage() {
     const [isMobileOpen, setMobileOpen] = useState(false);
     const [isDesktopOpen, toggleDesktop] = useState(true);
 
+    // Reset state on mount (refresh/navigation)
+    useEffect(() => {
+        setQuery('');
+        setResults([]);
+        setPage(0);
+        setHasMore(true);
+        setStatusMessage('');
+        setError(null);
+    }, []);
+
     const performSearch = async (reset: boolean = true) => {
         if (!query.trim()) return;
 
@@ -283,26 +293,39 @@ export default function ResearchPage() {
                             </p>
                         </div>
 
-                        <form onSubmit={handleSearchSubmit} className="relative group shadow-purple-500/5 rounded-2xl">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Search className="h-6 w-6 text-zinc-400 group-focus-within:text-purple-600 transition-colors" />
+                        <form onSubmit={handleSearchSubmit} className="relative group shadow-purple-500/5 rounded-2xl flex flex-col md:block">
+                            <div className="relative flex-1">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                                    <Search className="h-6 w-6 text-zinc-400 group-focus-within:text-purple-600 transition-colors" />
+                                </div>
+                                <Input
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="ถามประเด็นกฎหมายของคุณที่นี่..."
+                                    className="pl-12 h-16 text-lg bg-white shadow-xl shadow-zinc-200/50 border-zinc-200 focus-visible:ring-purple-500 rounded-2xl md:rounded-r-2xl w-full transition-all"
+                                />
+                                {/* Desktop Button Position */}
+                                <div className="absolute inset-y-0 right-0 pr-3 hidden md:flex items-center">
+                                    <Button
+                                        type="submit"
+                                        disabled={loading || !query.trim()}
+                                        className="h-10 rounded-xl bg-gray-900 hover:bg-black text-white px-6 font-medium shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                        {loading && page === 0 ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                                        {loading && page === 0 ? 'Analyzing...' : 'Research'}
+                                    </Button>
+                                </div>
                             </div>
-                            <Input
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="ถามประเด็นกฎหมายของคุณที่นี่..."
-                                className="pl-12 h-16 text-lg bg-white shadow-xl shadow-zinc-200/50 border-zinc-200 focus-visible:ring-purple-500 rounded-2xl transition-all"
-                            />
-                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <Button
-                                    type="submit"
-                                    disabled={loading || !query.trim()}
-                                    className="h-10 rounded-xl bg-gray-900 hover:bg-black text-white px-6 font-medium shadow-lg hover:shadow-xl transition-all"
-                                >
-                                    {loading && page === 0 ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                                    {loading && page === 0 ? 'Analyzing...' : 'Research'}
-                                </Button>
-                            </div>
+
+                            {/* Mobile Button: Stacked Below */}
+                            <Button
+                                type="submit"
+                                disabled={loading || !query.trim()}
+                                className="mt-3 md:hidden h-12 rounded-xl bg-gray-900 hover:bg-black text-white font-medium shadow-lg w-full flex items-center justify-center gap-2"
+                            >
+                                {loading && page === 0 ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                {loading && page === 0 ? 'Analyzing...' : 'Research'}
+                            </Button>
                         </form>
 
                         {/* Real-time Status / Thinking Process */}

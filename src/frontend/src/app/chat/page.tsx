@@ -543,7 +543,7 @@ function ChatContent() {
                                                                     const hasSource = !!source;
 
                                                                     // FALLBACK: If no local source, link to Google Search
-                                                                    const externalLink = `https://www.google.com/search?q=${encodeURIComponent("ฎีกาที่ " + text)}`;
+                                                                    const externalLink = `https://www.google.com/search?q=${encodeURIComponent("คำพิพากษาศาลฎีกาที่ " + text)}`;
 
                                                                     return (
                                                                         <span className="relative inline-block group align-middle">

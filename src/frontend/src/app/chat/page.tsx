@@ -2,7 +2,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Bot, User, ArrowLeft, Sparkles, X, BookOpen, Gavel, Scale, Menu, ExternalLink, Brain, BrainCircuit, Database, Loader2, Clock, PanelLeft } from "lucide-react"
+import { Send, Bot, User, ArrowLeft, Sparkles, X, BookOpen, Gavel, Scale, Menu, ExternalLink, Brain, BrainCircuit, Database, Loader2, Clock, PanelLeft, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -542,6 +542,9 @@ function ChatContent() {
                                                                     const source = msg.sources?.find(s => s.id.includes(id) || (id && s.id.includes(id)));
                                                                     const hasSource = !!source;
 
+                                                                    // FALLBACK: If no local source, link to Google Search
+                                                                    const externalLink = `https://www.google.com/search?q=${encodeURIComponent("ฎีกาที่ " + text)}`;
+
                                                                     return (
                                                                         <span className="relative inline-block group align-middle">
                                                                             <button
@@ -549,20 +552,24 @@ function ChatContent() {
                                                                                 onClick={(e) => {
                                                                                     e.preventDefault();
                                                                                     e.stopPropagation();
-                                                                                    if (source) setSelectedSource(source);
+                                                                                    if (source) {
+                                                                                        setSelectedSource(source);
+                                                                                    } else {
+                                                                                        window.open(externalLink, '_blank');
+                                                                                    }
                                                                                 }}
                                                                                 className={cn(
                                                                                     "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md mx-1 text-xs font-bold transition-all select-none peer",
                                                                                     "border shadow-sm",
                                                                                     hasSource
                                                                                         ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 hover:shadow-md cursor-pointer"
-                                                                                        : "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed opacity-70"
+                                                                                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 cursor-pointer"
                                                                                 )}
-                                                                                disabled={!hasSource}
+                                                                            // Always enabled now
                                                                             >
                                                                                 <Gavel size={10} className={cn(hasSource ? "text-indigo-600" : "text-slate-400")} />
                                                                                 <span className="truncate max-w-[180px]">{text}</span>
-                                                                                {hasSource && <ExternalLink size={8} className="opacity-50" />}
+                                                                                {hasSource ? <ExternalLink size={8} className="opacity-50" /> : <Search size={8} className="opacity-50" />}
                                                                             </button>
 
                                                                             {/* Smart Hover Card (Appears on Hover) */}

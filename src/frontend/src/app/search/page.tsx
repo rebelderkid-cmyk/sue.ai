@@ -40,35 +40,35 @@ const CaseCard = ({ item, onOpenPdf }: { item: ComparisonResult, onOpenPdf: (url
             className="group relative bg-white border border-zinc-200 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden mb-6"
         >
             {/* Header */}
-            <div className="flex items-start justify-between p-5 border-b border-zinc-100 bg-zinc-50/50">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className="bg-zinc-100 text-zinc-500 text-xs px-2 py-0.5 rounded-md font-mono border border-zinc-200">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between p-4 md:p-5 border-b border-zinc-100 bg-zinc-50/50 gap-3 md:gap-0">
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="bg-zinc-100 text-zinc-500 text-xs px-2 py-0.5 rounded-md font-mono border border-zinc-200 whitespace-nowrap">
                             {item.year || 'N/A'}
                         </span>
                         <button
                             onClick={() => item.pdf_url && onOpenPdf(item.pdf_url, item.case_id)}
-                            className="text-lg font-bold text-zinc-800 hover:text-purple-600 transition-colors flex items-center gap-2 text-left cursor-pointer"
+                            className="text-base md:text-lg font-bold text-zinc-800 hover:text-purple-600 transition-colors flex items-center gap-2 text-left cursor-pointer flex-1"
                         >
-                            คำพิพากษาศาลฎีกาที่ {item.case_id}
-                            <BookOpen className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity" />
+                            <span className="break-words">คำพิพากษาศาลฎีกาที่ {item.case_id}</span>
+                            <BookOpen className="h-4 w-4 opacity-0 group-hover:opacity-50 transition-opacity hidden md:block" />
                         </button>
                     </div>
                 </div>
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 w-full md:w-auto justify-center md:justify-start bg-white md:bg-transparent border md:border-transparent border-purple-100 shadow-sm md:shadow-none"
                     onClick={() => item.pdf_url && onOpenPdf(item.pdf_url, item.case_id)}
                     disabled={!item.pdf_url}
                 >
                     <BookOpen className="h-4 w-4 mr-2" />
-                    อ่านฉบับเต็ม
+                    {item.pdf_url ? "อ่านฉบับเต็ม" : "ไม่มีไฟล์ PDF"}
                 </Button>
             </div>
 
             {/* Body Content */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {/* Left Column: Facts & Issue */}
                 <div className="space-y-6">
                     <div>
